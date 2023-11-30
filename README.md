@@ -10,3 +10,7 @@
 Проект для Visual Studio Code + PlatformIO
 
 Проект платы, для которой написана прошивка можно посмотреть [здесь](https://oshwlab.com/nezumikun/happy-new-year-lights_copy)
+
+Использованы библиотеки:
+* [microLED от AlexGyver](https://github.com/GyverLibs/microLED)
+* [FastLED](https://github.com/FastLED/FastLED)
