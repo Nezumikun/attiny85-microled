@@ -8,3 +8,5 @@
 Вход в деморежим: долгое нажатие на кнопку.
 
 Проект для Visual Studio Code + PlatformIO
+
+Проект платы, для которой написана прошивка можно посмотреть [здесь](https://oshwlab.com/nezumikun/happy-new-year-lights_copy)
