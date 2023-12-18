@@ -13,15 +13,10 @@
 #endif
 
 #define NEZUMIKUN_LED_MANAGER_EFFECTS_NUMBER 8
-// ===== ЦВЕТОВАЯ ГЛУБИНА =====
-// 1, 2, 3 (байт на цвет)
-// на меньшем цветовом разрешении скетч будет занимать в разы меньше места,
-// но уменьшится и количество оттенков и уровней яркости!
-// дефайн делается ДО ПОДКЛЮЧЕНИЯ БИБЛИОТЕКИ
-// без него будет 3 байта по умолчанию
+// глубина цвета в байтах
 #define COLOR_DEBTH 3
-#include <microLED.h>   // подключаем библу
-#include <FastLEDsupport.h> // вкл поддержку
+#include <microLED.h>
+#include <FastLEDsupport.h>
 
 #ifdef BOARD_ATTINY85
 #define NUMLEDS 100      // кол-во светодиодов
@@ -71,6 +66,7 @@ bool isShowAllModesInDemo = false;
 bool first = true;
 uint8_t ledGreenState = LOW;
 unsigned long now = 0;
+bool stripState = true;
 
 void rainbow() {
   static uint8_t skip = 3;
@@ -97,7 +93,6 @@ void rainbow() {
       strip.set(i, mWheel8((i + hue) * 255 / NUMLEDS)); // выводим радугу
     }
   }
-  strip.show();
 }
 
 void rainbowNoise() {
@@ -110,7 +105,6 @@ void rainbowNoise() {
   counter += 10;
   counter2++;
   for (int i = 0; i < NUMLEDS; i++) strip.set(i, mWheel8(counter2 + inoise8(i * 50, counter)));
-  strip.show();
 }
 
 inline void _fadeStrip(uint8_t fadeValue) {
@@ -132,7 +126,6 @@ void sinelon() {
   color += CHSV(hue, 255, 192);
   temp = CRGBtoData(color);
   strip.set(x, temp);
-  strip.show();
 }
 
 void confetti() 
@@ -146,7 +139,6 @@ void confetti()
   _fadeStrip(25 * 30 / NUMLEDS);
   uint8_t x = random8(NUMLEDS);
   strip.set(x, getBlend(1, 2, strip.get(x), mWheel8(hue + random8(64), 255)));
-  strip.show();
 }
 
 void juggle() {
@@ -167,7 +159,6 @@ void juggle() {
     strip.set(x, temp);
     dothue += 32;
   }
-  strip.show();
 }
 
 void bpm()
@@ -184,7 +175,6 @@ void bpm()
   for( int i = 0; i < NUMLEDS; i++) { //9948
     strip.set(i, CRGBtoData(ColorFromPalette(palette, hue + (i * 2), beat - hue + (i * 10))));
   }
-  strip.show();
 }
 
 #ifdef BOARD_ATTINY85
@@ -254,7 +244,6 @@ void perlinNoise() {
     }
     strip.set(i, CRGBtoData(color));
   }
-  strip.show();
   x++;
   y += 10;
 }
@@ -288,7 +277,6 @@ void gradient() {
     else 
       strip.set(i, _getXMassGradient((i + hue) % NUMLEDS));
   }
-  strip.show();
 }
 
 void nextEffect() {
@@ -335,24 +323,32 @@ void checkButtonPush() {
     NANO_PRINTLN("Button is pressed");
   }
   else if (temp && buttonState && delta > 1000) {
-    demoMode = true;
     if (!hold) {
       hold = true;
       NANO_PRINTLN("Button is holded");
     }
   }
-  else if (!temp && buttonState && delta > 100) {
+  else if (!temp && buttonState) {
+    NANO_PRINTLN("Button is released");
     buttonState = false;
     buttonTimer = now;
     if (!hold) {
       if (!demoMode) {
         nextEffect();
+      } else {
+        stripState = !stripState;
+        strip.setBrightness(stripState ? BRIGHTNESS : 0);
+        NANO_PRINT("Strip state is ");
+        NANO_PRINT(stripState ? "ON" : "OFF");
+        NANO_PRINTLN();
       }
-      demoMode = false;
-      ledGreenState = LOW;
+    } else {
+      demoMode = !demoMode;
+      NANO_PRINT("Demo mode ");
+      NANO_PRINT(demoMode ? "ON" : "OFF");
+      NANO_PRINTLN();
     }
     hold = false;
-    NANO_PRINTLN("Button is released");
   }
 }
 
@@ -361,6 +357,8 @@ void ledGreenTouch() {
   if (now - prevTime < 500) return;
   if (demoMode) {
     ledGreenState = (ledGreenState == LOW) ? HIGH : LOW;
+  } else {
+    ledGreenState = LOW;
   }
   digitalWrite(GREENLED_PIN, ledGreenState);
   prevTime = now;
@@ -383,7 +381,8 @@ void loop() {
       case 5: bpm(); break;
       case 6: perlinNoise(); break;
       case 7: juggle(); break;
-     }
+    }
+    strip.show();
     hue++;
     prevStripTime = now;
   }
